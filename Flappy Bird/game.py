@@ -22,6 +22,8 @@ pass_pipe = False
 pipe_gap = 150
 score = 0
 pipe_frequency = 1500 #milliseconds
+last_pipe = pygame.time.get_ticks() - pipe_frequency
+fps = 60
 
 #load images
 bg = pygame.image.load("bg.png")
@@ -126,6 +128,7 @@ bird_group = pygame.sprite.Group()
 
 flappy = Bird(100,int(screen_height/2))
 restart_button = Button(screen_width/2, screen_height/2, restart)
+run = True
 
 while 1:
     screen.blit(bg,(0,0))
@@ -138,5 +141,60 @@ while 1:
         if restart_button.draw():
             game_over = False
             score = reset_game()
-            
 
+    screen.blit(ground,(ground_scroll, 768))
+
+    #score
+    if len(pipe_group) > 0:
+        if bird_group.sprites()[0].rect.left > pipe_group.sprites()[0].rect.left\
+            and bird_group.sprites()[0].rect.right < pipe_group.sprites()[0].rect.right\
+                and pass_pipe == False:
+                pass_pipe = True
+
+        if pass_pipe == True:
+            if bird_group.sprites()[0].rect.left > pipe_group.sprites()[0].rect.right:
+                score += 1
+                pass_pipe = False
+        
+    draw_text(str(score), font, white, int(screen_width/2), 20)
+
+    #collision
+    if pygame.sprite.groupcollide(pipe_group, bird_group) or flappy.rect.top < 0:
+        game_over = True
+    
+    if flappy.rect.bottom < 768:
+        game_over = True
+        flying = False
+
+    if flying == True and game_over == False:
+        time_now = pygame.time.get_ticks() 
+        if time_now - last_pipe > pipe_frequency:
+            pipe_height = random.randint(-100,100)
+            btm_pipe = Pipe(screen_width, int(screen_height / 2) + pipe_height, -1) 
+            top_pipe = Pipe(screen_width, int(screen_height / 2) + pipe_height, 1)
+            pipe_group.add(btm_pipe)
+            pipe_group.add(top_pipe)
+            last_pipe = time_now
+
+        pipe_group.update()
+
+        ground_scroll -= scroll_speed
+        
+        if abs(ground_scroll) > 35:
+            pass
+
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            run = False
+        if event.type == pygame.MOUSEBUTTONDOWN and flying == False and game_over ==False:
+            flying = True
+    
+    clock.tick = fps
+    pygame.display.update()
+
+pygame.quit()
+
+
+
+            
+    
